@@ -8,7 +8,6 @@ import re
 import uuid
 
 import clickhouse_connect
-import chdb.session as chs
 from clickhouse_connect.driver.binding import format_query_value
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -686,6 +685,15 @@ def _init_chdb_client():
             logger.info("chDB is disabled, skipping client initialization")
             return None
 
+        try:
+            import chdb.session as chs
+        except ImportError:
+            logger.error(
+                "chdb package is not installed. "
+                "Install it with: pip install mcp-clickhouse[chdb]"
+            )
+            return None
+
         client_config = get_chdb_config().get_client_config()
         data_path = client_config["data_path"]
         logger.info(f"Creating chDB client with data_path={data_path}")
@@ -716,12 +724,13 @@ if os.getenv("CHDB_ENABLED", "false").lower() == "true":
     _chdb_client = _init_chdb_client()
     if _chdb_client:
         atexit.register(lambda: _chdb_client.close())
-
-    mcp.add_tool(Tool.from_function(run_chdb_select_query))
-    chdb_prompt = Prompt.from_function(
-        chdb_initial_prompt,
-        name="chdb_initial_prompt",
-        description="This prompt helps users understand how to interact and perform common operations in chDB",
-    )
-    mcp.add_prompt(chdb_prompt)
-    logger.info("chDB tools and prompts registered")
+        mcp.add_tool(Tool.from_function(run_chdb_select_query))
+        chdb_prompt = Prompt.from_function(
+            chdb_initial_prompt,
+            name="chdb_initial_prompt",
+            description="This prompt helps users understand how to interact and perform common operations in chDB",
+        )
+        mcp.add_prompt(chdb_prompt)
+        logger.info("chDB tools and prompts registered")
+    else:
+        logger.warning("chDB is enabled but client initialization failed; chDB tools not registered")

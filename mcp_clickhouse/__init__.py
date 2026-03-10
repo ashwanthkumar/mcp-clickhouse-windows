@@ -5,9 +5,6 @@ from .mcp_server import (
     list_databases,
     list_tables,
     run_query,
-    create_chdb_client,
-    run_chdb_select_query,
-    chdb_initial_prompt,
     table_pagination_cache,
     fetch_table_names_from_system,
     get_paginated_table_data,
@@ -27,11 +24,22 @@ __all__ = [
     "list_tables",
     "run_query",
     "create_clickhouse_client",
-    "create_chdb_client",
-    "run_chdb_select_query",
-    "chdb_initial_prompt",
     "table_pagination_cache",
     "fetch_table_names_from_system",
     "get_paginated_table_data",
     "create_page_token",
 ]
+
+# Only export chdb symbols when chdb is enabled
+if os.getenv("CHDB_ENABLED", "false").lower() == "true":
+    from .mcp_server import (
+        create_chdb_client,
+        run_chdb_select_query,
+        chdb_initial_prompt,
+    )
+
+    __all__ += [
+        "create_chdb_client",
+        "run_chdb_select_query",
+        "chdb_initial_prompt",
+    ]
